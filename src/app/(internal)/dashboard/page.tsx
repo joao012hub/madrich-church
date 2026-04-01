@@ -2,10 +2,31 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
+interface Usuario {
+  id: string
+  email?: string
+}
+
+interface Culto {
+  id: string
+  nome: string
+  data: string
+  horario: string
+  recorrencia: string
+}
+
+interface Stats {
+  membros: number
+  ministerios: number
+  cultos: number
+  escalas: number
+  pendentes: number
+}
+
 export default function Dashboard() {
-  const [usuario, setUsuario] = useState(null)
-  const [stats, setStats] = useState({ membros: 0, ministerios: 0, cultos: 0, escalas: 0, pendentes: 0 })
-  const [proximosCultos, setProximosCultos] = useState([])
+  const [usuario, setUsuario] = useState<Usuario | null>(null)
+  const [stats, setStats] = useState<Stats>({ membros: 0, ministerios: 0, cultos: 0, escalas: 0, pendentes: 0 })
+  const [proximosCultos, setProximosCultos] = useState<Culto[]>([])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -34,7 +55,7 @@ export default function Dashboard() {
     { label: 'Escalas Pendentes', valor: stats.pendentes, icon: '⏳', cor: 'from-amber-500 to-orange-600', href: '/escalas' },
   ]
 
-  function formatarData(dataStr) {
+  function formatarData(dataStr: string) {
     const [ano, mes, dia] = dataStr.split('-')
     return dia + '/' + mes + '/' + ano
   }

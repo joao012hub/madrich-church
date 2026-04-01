@@ -2,8 +2,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
+interface Ministerio { id: string; nome: string }
+
 export default function Ministerios() {
-  const [ministerios, setMinisterios] = useState([])
+  const [ministerios, setMinisterios] = useState<Ministerio[]>([])
   const [nome, setNome] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [mensagem, setMensagem] = useState('')
@@ -33,7 +35,7 @@ export default function Ministerios() {
     setTimeout(() => setMensagem(''), 3000)
   }
 
-  async function handleDeletar(id) {
+  async function handleDeletar(id: string) {
     await supabase.from('ministerios').delete().eq('id', id)
     carregar()
   }
@@ -49,41 +51,21 @@ export default function Ministerios() {
         </div>
         <a href="/dashboard" className="text-sm text-gray-400 hover:text-white transition">← Voltar ao painel</a>
       </nav>
-
       <div className="p-6 max-w-2xl mx-auto">
         <div className="mb-8 mt-4">
           <h2 className="text-2xl font-bold text-white mb-1">🎵 Ministérios</h2>
           <p className="text-gray-400 text-sm">Gerencie os ministérios da sua igreja</p>
         </div>
-
         <div className="rounded-2xl p-6 mb-6" style={{background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)"}}>
           <h3 className="text-white font-semibold mb-4">Adicionar Ministério</h3>
           <div className="flex gap-3">
-            <input
-              type="text"
-              placeholder="Ex: Louvor, Mídia, Recepção..."
-              value={nome}
-              onChange={e => setNome(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleAdicionar()}
-              className="flex-1 px-4 py-3 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              style={{background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)"}}
-            />
-            <button
-              onClick={handleAdicionar}
-              disabled={carregando}
-              className="px-6 py-3 rounded-xl text-white font-semibold text-sm transition hover:opacity-90"
-              style={{background: "linear-gradient(135deg, #6366f1, #8b5cf6)"}}
-            >
+            <input type="text" placeholder="Ex: Louvor, Mídia, Recepção..." value={nome} onChange={e => setNome(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAdicionar()} className="flex-1 px-4 py-3 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" style={{background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)"}} />
+            <button onClick={handleAdicionar} disabled={carregando} className="px-6 py-3 rounded-xl text-white font-semibold text-sm transition hover:opacity-90" style={{background: "linear-gradient(135deg, #6366f1, #8b5cf6)"}}>
               {carregando ? '...' : 'Adicionar'}
             </button>
           </div>
-          {mensagem && (
-            <div className="mt-3 px-4 py-2 rounded-lg text-green-400 text-sm" style={{background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)"}}>
-              ✓ {mensagem}
-            </div>
-          )}
+          {mensagem && <div className="mt-3 px-4 py-2 rounded-lg text-green-400 text-sm" style={{background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)"}}>✓ {mensagem}</div>}
         </div>
-
         <div className="rounded-2xl overflow-hidden" style={{background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)"}}>
           <div className="px-6 py-4" style={{borderBottom: "1px solid rgba(255,255,255,0.08)"}}>
             <h3 className="text-white font-semibold">Ministérios Cadastrados</h3>
@@ -103,9 +85,7 @@ export default function Ministerios() {
                   </div>
                   <span className="text-white font-medium">{m.nome}</span>
                 </div>
-                <button onClick={() => handleDeletar(m.id)} className="text-xs text-red-400 hover:text-red-300 px-3 py-1 rounded-lg transition" style={{background: "rgba(239,68,68,0.1)"}}>
-                  Remover
-                </button>
+                <button onClick={() => handleDeletar(m.id)} className="text-xs text-red-400 hover:text-red-300 px-3 py-1 rounded-lg transition" style={{background: "rgba(239,68,68,0.1)"}}>Remover</button>
               </div>
             ))
           )}

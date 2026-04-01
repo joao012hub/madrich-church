@@ -2,11 +2,23 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
+interface Culto { id: string; nome: string; data: string }
+interface Ministerio { id: string; nome: string }
+interface Membro { id: string; nome: string }
+interface Escala {
+  id: string
+  status: string
+  cultos: { nome: string; data: string } | null
+  ministerios: { nome: string } | null
+  usuarios: { nome: string } | null
+}
+type StatusKey = 'pendente' | 'aprovado' | 'recusado' | 'confirmado'
+
 export default function Escalas() {
-  const [escalas, setEscalas] = useState([])
-  const [cultos, setCultos] = useState([])
-  const [ministerios, setMinisterios] = useState([])
-  const [membros, setMembros] = useState([])
+  const [escalas, setEscalas] = useState<Escala[]>([])
+  const [cultos, setCultos] = useState<Culto[]>([])
+  const [ministerios, setMinisterios] = useState<Ministerio[]>([])
+  const [membros, setMembros] = useState<Membro[]>([])
   const [cultoId, setCultoId] = useState('')
   const [ministerioId, setMinisterioId] = useState('')
   const [usuarioId, setUsuarioId] = useState('')
@@ -44,17 +56,17 @@ export default function Escalas() {
     setTimeout(() => setMensagem(''), 3000)
   }
 
-  async function handleStatus(id, status) {
+  async function handleStatus(id: string, status: string) {
     await supabase.from('escalas').update({ status }).eq('id', id)
     carregar()
   }
 
-  async function handleDeletar(id) {
+  async function handleDeletar(id: string) {
     await supabase.from('escalas').delete().eq('id', id)
     carregar()
   }
 
-  const statusConfig = {
+  const statusConfig: Record<StatusKey, { cor: string; texto: string; label: string }> = {
     pendente: { cor: 'rgba(234,179,8,0.15)', texto: '#facc15', label: 'Pendente' },
     aprovado: { cor: 'rgba(34,197,94,0.15)', texto: '#4ade80', label: 'Aprovado' },
     recusado: { cor: 'rgba(239,68,68,0.15)', texto: '#f87171', label: 'Recusado' },
@@ -117,8 +129,8 @@ export default function Escalas() {
                       <p className="text-gray-400 text-xs">{e.cultos?.nome} · {e.ministerios?.nome}</p>
                     </div>
                   </div>
-                  <span className="text-xs px-3 py-1 rounded-full font-medium" style={{background: statusConfig[e.status]?.cor, color: statusConfig[e.status]?.texto}}>
-                    {statusConfig[e.status]?.label}
+                  <span className="text-xs px-3 py-1 rounded-full font-medium" style={{background: statusConfig[e.status as StatusKey]?.cor, color: statusConfig[e.status as StatusKey]?.texto}}>
+                    {statusConfig[e.status as StatusKey]?.label}
                   </span>
                 </div>
                 <div className="flex gap-2 flex-wrap">
