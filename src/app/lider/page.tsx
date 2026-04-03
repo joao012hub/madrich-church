@@ -2,9 +2,19 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
+interface Usuario { id: string; nome: string; email: string; tipo: string }
+interface Escala {
+  id: string
+  status: string
+  cultos: { nome: string; data: string } | null
+  ministerios: { nome: string } | null
+  usuarios: { nome: string } | null
+}
+type StatusKey = 'pendente' | 'aprovado' | 'recusado' | 'confirmado'
+
 export default function DashboardLider() {
-  const [usuario, setUsuario] = useState(null)
-  const [escalas, setEscalas] = useState([])
+  const [usuario, setUsuario] = useState<Usuario | null>(null)
+  const [escalas, setEscalas] = useState<Escala[]>([])
   const [stats, setStats] = useState({ pendentes: 0, aprovadas: 0, total: 0 })
 
   useEffect(() => {
@@ -15,22 +25,29 @@ export default function DashboardLider() {
       if (!u || u.tipo === 'admin') { window.location.href = '/dashboard'; return }
       setUsuario(u)
       const { data: e } = await supabase.from('escalas').select('*, cultos(nome, data), ministerios(nome), usuarios(nome)').order('criado_em', { ascending: false })
-      setEscalas(e || [])
-      setStats({ pendentes: (e||[]).filter(x=>x.status==='pendente').length, aprovadas: (e||[]).filter(x=>x.status==='aprovado').length, total: (e||[]).length })
+      const lista: Escala[] = e || []
+      setEscalas(lista)
+      setStats({ pendentes: lista.filter(x=>x.status==='pendente').length, aprovadas: lista.filter(x=>x.status==='aprovado').length, total: lista.length })
     }
     carregar()
   }, [])
 
-  async function handleStatus(id, status) {
+  async function handleStatus(id: string, status: string) {
     await supabase.from('escalas').update({ status }).eq('id', id)
     const { data: e } = await supabase.from('escalas').select('*, cultos(nome, data), ministerios(nome), usuarios(nome)').order('criado_em', { ascending: false })
-    setEscalas(e || [])
-    setStats({ pendentes: (e||[]).filter(x=>x.status==='pendente').length, aprovadas: (e||[]).filter(x=>x.status==='aprovado').length, total: (e||[]).length })
+    const lista: Escala[] = e || []
+    setEscalas(lista)
+    setStats({ pendentes: lista.filter(x=>x.status==='pendente').length, aprovadas: lista.filter(x=>x.status==='aprovado').length, total: lista.length })
   }
 
   async function handleSair() { await supabase.auth.signOut(); window.location.href = '/' }
 
-  const sc = { pendente: { cor: 'rgba(234,179,8,0.15)', texto: '#facc15', label: 'Pendente' }, aprovado: { cor: 'rgba(34,197,94,0.15)', texto: '#4ade80', label: 'Aprovado' }, recusado: { cor: 'rgba(239,68,68,0.15)', texto: '#f87171', label: 'Recusado' }, confirmado: { cor: 'rgba(99,102,241,0.15)', texto: '#818cf8', label: 'Confirmado' } }
+  const sc: Record<StatusKey, { cor: string; texto: string; label: string }> = {
+    pendente: { cor: 'rgba(234,179,8,0.15)', texto: '#facc15', label: 'Pendente' },
+    aprovado: { cor: 'rgba(34,197,94,0.15)', texto: '#4ade80', label: 'Aprovado' },
+    recusado: { cor: 'rgba(239,68,68,0.15)', texto: '#f87171', label: 'Recusado' },
+    confirmado: { cor: 'rgba(99,102,241,0.15)', texto: '#818cf8', label: 'Confirmado' }
+  }
 
   return (
     <div className="min-h-screen" style={{background:"radial-gradient(ellipse at top,#1e1b4b 0%,#0f0f0f 70%)"}}>
@@ -73,7 +90,7 @@ export default function DashboardLider() {
                     <p className="text-gray-400 text-xs">{e.cultos?.nome} · {e.ministerios?.nome}</p>
                   </div>
                 </div>
-                <span className="text-xs px-3 py-1 rounded-full font-medium" style={{background:sc[e.status]?.cor,color:sc[e.status]?.texto}}>{sc[e.status]?.label}</span>
+                <span className="text-xs px-3 py-1 rounded-full font-medium" style={{background:sc[e.status as StatusKey]?.cor,color:sc[e.status as StatusKey]?.texto}}>{sc[e.status as StatusKey]?.label}</span>
               </div>
               <div className="flex gap-2">
                 <button onClick={()=>handleStatus(e.id,'aprovado')} className="text-xs px-3 py-1 rounded-lg text-green-400" style={{background:"rgba(34,197,94,0.15)"}}>Aprovar</button>
