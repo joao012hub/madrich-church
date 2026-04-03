@@ -2,9 +2,18 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
+interface Usuario { id: string; nome: string; email: string; tipo: string }
+interface Escala {
+  id: string
+  status: string
+  cultos: { nome: string; data: string; horario: string } | null
+  ministerios: { nome: string } | null
+}
+type StatusKey = 'pendente' | 'aprovado' | 'confirmado' | 'recusado'
+
 export default function DashboardMembro() {
-  const [usuario, setUsuario] = useState(null)
-  const [escalas, setEscalas] = useState([])
+  const [usuario, setUsuario] = useState<Usuario | null>(null)
+  const [escalas, setEscalas] = useState<Escala[]>([])
   const [mensagem, setMensagem] = useState('')
 
   useEffect(() => {
@@ -22,10 +31,12 @@ export default function DashboardMembro() {
     carregar()
   }, [])
 
-  async function handleConfirmar(id, status) {
+  async function handleConfirmar(id: string, status: string) {
     await supabase.from('escalas').update({ status }).eq('id', id)
     const { data: auth } = await supabase.auth.getUser()
+    if (!auth.user) return
     const { data: u } = await supabase.from('usuarios').select('*').eq('email', auth.user.email).single()
+    if (!u) return
     const { data: e } = await supabase.from('escalas').select('*, cultos(nome, data, horario), ministerios(nome)').eq('usuario_id', u.id).order('criado_em', { ascending: false })
     setEscalas(e || [])
     setMensagem(status === 'confirmado' ? 'Presenca confirmada!' : 'Recusado!')
@@ -34,9 +45,9 @@ export default function DashboardMembro() {
 
   async function handleSair() { await supabase.auth.signOut(); window.location.href = '/' }
 
-  function formatarData(d) { if (!d) return ''; const [a,m,dia]=d.split('-'); return dia+'/'+m+'/'+a }
+  function formatarData(d: string) { if (!d) return ''; const [a,m,dia]=d.split('-'); return dia+'/'+m+'/'+a }
 
-  const sc = {
+  const sc: Record<StatusKey, { cor: string; texto: string; label: string }> = {
     pendente: { cor: 'rgba(234,179,8,0.15)', texto: '#facc15', label: 'Aguardando' },
     aprovado: { cor: 'rgba(34,197,94,0.15)', texto: '#4ade80', label: 'Aprovado' },
     confirmado: { cor: 'rgba(99,102,241,0.15)', texto: '#818cf8', label: 'Confirmado' },
@@ -74,10 +85,10 @@ export default function DashboardMembro() {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <p className="text-white font-semibold">{e.cultos?.nome}</p>
-                  <p className="text-gray-400 text-sm mt-1">{formatarData(e.cultos?.data)} as {e.cultos?.horario?.slice(0,5)}</p>
+                  <p className="text-gray-400 text-sm mt-1">{formatarData(e.cultos?.data ?? '')} as {e.cultos?.horario?.slice(0,5)}</p>
                   <p className="text-indigo-400 text-xs mt-1">{e.ministerios?.nome}</p>
                 </div>
-                <span className="text-xs px-3 py-1 rounded-full font-medium" style={{background:sc[e.status]?.cor,color:sc[e.status]?.texto}}>{sc[e.status]?.label}</span>
+                <span className="text-xs px-3 py-1 rounded-full font-medium" style={{background:sc[e.status as StatusKey]?.cor,color:sc[e.status as StatusKey]?.texto}}>{sc[e.status as StatusKey]?.label}</span>
               </div>
               {(e.status === 'pendente' || e.status === 'aprovado') && (
                 <div className="flex gap-3">
