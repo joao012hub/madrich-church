@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 
 interface Culto { id: string; nome: string; data: string }
 interface Ministerio { id: string; nome: string }
-interface Membro { id: string; nome: string }
+interface Membro { id: string; nome: string; email: string }
 interface Escala {
   id: string
   status: string
@@ -29,7 +29,7 @@ export default function Escalas() {
     const { data: e } = await supabase.from('escalas').select('*, cultos(nome, data), ministerios(nome), usuarios(nome)').order('criado_em', { ascending: false })
     const { data: c } = await supabase.from('cultos').select('*')
     const { data: m } = await supabase.from('ministerios').select('*')
-    const { data: u } = await supabase.from('usuarios').select('*')
+    const { data: u } = await supabase.from('usuarios').select('id, nome, email')
     setEscalas(e || [])
     setCultos(c || [])
     setMinisterios(m || [])
@@ -47,8 +47,31 @@ export default function Escalas() {
     if (!cultoId || !ministerioId || !usuarioId) return
     setCarregando(true)
     const { error } = await supabase.from('escalas').insert({ culto_id: cultoId, ministerio_id: ministerioId, usuario_id: usuarioId, status: 'pendente' })
-    if (error) { setMensagem('Erro ao criar escala!') } else {
-      setMensagem('Membro escalado!')
+    if (error) {
+      setMensagem('Erro ao criar escala!')
+    } else {
+      // Busca dados para o email
+      const membro = membros.find(m => m.id === usuarioId)
+      const culto = cultos.find(c => c.id === cultoId)
+      const ministerio = ministerios.find(m => m.id === ministerioId)
+
+      // Dispara o email em segundo plano
+      if (membro?.email && culto && ministerio) {
+        fetch('/api/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: membro.email,
+            nome: membro.nome,
+            culto: culto.nome,
+            data: culto.data,
+            horario: '',
+            funcao: ministerio.nome,
+          }),
+        }).catch(() => null)
+      }
+
+      setMensagem('Membro escalado! Email enviado ✓')
       setCultoId(''); setMinisterioId(''); setUsuarioId('')
       carregar()
     }
