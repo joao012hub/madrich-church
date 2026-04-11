@@ -29,20 +29,28 @@ export default function Membros() {
   function abrirEdicao(m: Membro) { setEditando(m.id); setNome(m.nome); setEmail(m.email); setTipo(m.tipo as TipoKey) }
   function cancelarEdicao() { setEditando(null); setNome(''); setEmail(''); setTipo('membro') }
 
-  async function handleSalvar() {
-    if (!nome.trim() || !email.trim()) return
-    setCarregando(true)
-    if (editando) {
-      await supabase.from('usuarios').update({ nome, email, tipo }).eq('id', editando)
-      setMensagem('Membro atualizado!'); setEditando(null)
-    } else {
-      await supabase.from('usuarios').insert({ nome, email, tipo, igreja_id: null })
-      setMensagem('Membro cadastrado!')
-    }
-    setNome(''); setEmail(''); setTipo('membro')
-    carregar(); setCarregando(false)
-    setTimeout(() => setMensagem(''), 3000)
+async function handleSalvar() {
+  if (!nome.trim() || !email.trim()) return
+  setCarregando(true)
+
+  const { data: authData } = await supabase.auth.getUser()
+  const { data: perfil } = await supabase
+    .from('usuarios')
+    .select('igreja_id')
+    .eq('id', authData.user!.id)
+    .single()
+
+  if (editando) {
+    await supabase.from('usuarios').update({ nome, email, tipo }).eq('id', editando)
+    setMensagem('Membro atualizado!'); setEditando(null)
+  } else {
+    await supabase.from('usuarios').insert({ nome, email, tipo, igreja_id: perfil?.igreja_id })
+    setMensagem('Membro cadastrado!')
   }
+  setNome(''); setEmail(''); setTipo('membro')
+  carregar(); setCarregando(false)
+  setTimeout(() => setMensagem(''), 3000)
+}
 
   async function handleDeletar(id: string) {
     if (!confirm('Tem certeza?')) return
