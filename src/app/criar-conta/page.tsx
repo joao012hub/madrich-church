@@ -29,7 +29,7 @@ export default function CriarConta() {
     }
     setCarregando(true)
 
-    const res = await fetch('/api/criar-conta', {
+    const res = await fetch('/api/cadastro', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nomeIgreja, nomeAdmin, email, senha }),
